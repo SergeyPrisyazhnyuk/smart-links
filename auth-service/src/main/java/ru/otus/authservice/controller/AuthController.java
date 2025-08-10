@@ -57,5 +57,6 @@ public class AuthController {
     @DeleteMapping("/users")
     public void deleteUsers() {
         authService.deleteAllUsers();
+        
     }
 }
