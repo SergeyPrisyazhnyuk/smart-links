@@ -36,22 +36,49 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           architecture: x64
-      - name: Build with Maven
-#        run: mvn --batch-mode --update-snapshots package
-        run: mvn clean verify jacoco:report coveralls:jacoco
 
+      - name: Build with Maven
+        run: mvn clean verify jacoco:report
+        
+      - name: Send coverage to Coveralls
+        run: mvn coveralls:report
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        
       - name: Check code coverage threshold
         if: ${{ failure() }}
         continue-on-error: true
         run: |
-              # Extract the total coverage percentage from the report
-              COVERAGE=$(grep '<total-covered' target/site/jacoco/index.html | grep -oE '[0-9]+\.[0-9]+%' | sed 's/%//')
-              
-              # Compare against desired threshold (90%)
-              if (( $(echo "$COVERAGE < 90" | bc -l) )); then
-                echo "::error::Code coverage ($COVERAGE%) below required minimum (90%). Please improve tests."
-                exit 1
-              fi
+          # Извлекаем общий процент покрытия из HTML-отчета
+          COVERAGE=$(grep '<td><strong>Total</strong></td>' target/site/jacoco/index.html | awk '{print substr($NF, 0, length($NF)-1)}')
+          
+          # Сравниваем с требуемым порогом (например, 90%)
+          if [[ "$COVERAGE" =~ ^([0-9]*(\.[0-9]+)?)$ ]]; then
+            if (( $(echo "$COVERAGE < 90" | bc -l) )); then
+              echo "::error::Code coverage ($COVERAGE%) below required minimum (90%). Please improve tests."
+              exit 1
+            fi
+          else
+            echo "::warning::Could not extract coverage information."
+          fi
+
+
+#      - name: Build with Maven
+#        run: mvn --batch-mode --update-snapshots package
+#        run: mvn clean verify jacoco:report coveralls:jacoco
+
+#      - name: Check code coverage threshold
+#        if: ${{ failure() }}
+#        continue-on-error: true
+#        run: |
+#              # Extract the total coverage percentage from the report
+#              COVERAGE=$(grep '<total-covered' target/site/jacoco/index.html | grep -oE '[0-9]+\.[0-9]+%' | sed 's/%//')
+#              
+#              # Compare against desired threshold (90%)
+#              if (( $(echo "$COVERAGE < 90" | bc -l) )); then
+#                echo "::error::Code coverage ($COVERAGE%) below required minimum (90%). Please improve tests."
+#                exit 1
+#              fi
 
       # Runs a single command using the runners shell
 #       - name: Run a one-line script
