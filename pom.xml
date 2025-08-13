@@ -27,9 +27,9 @@
     <module>auth-service</module>
       <module>routing-service</module>
     <module>rule-management-service</module>
+    <module>page-rendering-service</module>
 
     <module>jacoco-aggregated-report</module>
-
   </modules>
 
 </project>
