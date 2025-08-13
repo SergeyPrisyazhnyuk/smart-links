@@ -1,4 +1,4 @@
-package token;
+package ru.otus.authservice.token;
 
 import org.junit.jupiter.api.Test;
 import ru.otus.authservice.token.JwtTokenProvider;
