@@ -25,12 +25,14 @@ public class AuthController {
         return "HI! This is auth-service!";
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Token> login(@RequestBody User credentials) {
-        if (!authService.authenticate(credentials)) {
+    @GetMapping("/login")
+    public ResponseEntity<Token> login(@RequestParam(name = "username") String login,
+                                       @RequestParam(name = "password") String password) {
+
+        if (!authService.authenticate(login, password)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
-        String token = jwtTokenProvider.generateToken(credentials.getUsername());
+        String token = jwtTokenProvider.generateToken(login);
         return ResponseEntity.ok(new Token(token));
     }
 

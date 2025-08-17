@@ -1,6 +1,7 @@
 package ru.otus.routingservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.otus.routingservice.model.Context;
 import ru.otus.routingservice.model.Rule;
@@ -11,22 +12,29 @@ import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class RoutingService {
 
     // tbd
     Rule rule = Rule.builder()
             .id(1L)
-            .condition("device='iPhone'")
+            .condition("device=iPhone")
             .destinationURL("/iphone-dashboard")
             .build();
 
     Rule rule2 = Rule.builder()
             .id(2L)
-            .condition("device='Android'")
+            .condition("device=Android")
             .destinationURL("/android-dashboard")
             .build();
 
-    private List<Rule> rules = Arrays.asList(rule, rule2);
+    Rule rule3 = Rule.builder()
+            .id(2L)
+            .condition("device=DESKTOP")
+            .destinationURL("/android-dashboard")
+            .build();
+
+    private List<Rule> rules = Arrays.asList(rule, rule2, rule3);
 
 
     public RoutingService(List<Rule> rules) {
@@ -34,8 +42,10 @@ public class RoutingService {
     }
 
     public String route(Context context) {
+        log.info("Context : " + context.toString());
         for (Rule rule : rules) {
             if (matchRule(rule.getCondition(), context)) {
+                log.info("!!!Running rule condition check!!!");
                 return rule.getDestinationURL();
             }
         }

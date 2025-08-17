@@ -12,4 +12,12 @@ public class Context {
     private String browser;
     private String region;
 
+    @Override
+    public String toString() {
+        return "Context{" +
+                "device='" + device + '\'' +
+                ", browser='" + browser + '\'' +
+                ", region='" + region + '\'' +
+                '}';
+    }
 }
