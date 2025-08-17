@@ -72,10 +72,6 @@ public class AuthService {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(routingData, headers);
 
             try {
-                log.info("SENT TO: " + "http://localhost:8082/route/context?device=" + routingData.get("device")
-                        + "&browser=" + routingData.get("browser")
-                        + "&region=" + routingData.get("region"));
-
                 URI uri = UriComponentsBuilder.fromHttpUrl("http://localhost:8082/route/context")
                         .queryParam("device", routingData.get("device"))
                         .queryParam("browser", routingData.get("browser"))
@@ -88,13 +84,11 @@ public class AuthService {
 
                restTemplate.getForObject(uri, String.class);
 
-/*
-                restTemplate.getForObject("http://localhost:8082/route/context",
 //                restTemplate.postForObject("http://localhost:8082/route/context",
 //                        request,
-                        String.class,
-                        routingData);
-*/
+//                        String.class,
+//                        routingData);
+
                 return true;
 
             } catch (Exception e) {
