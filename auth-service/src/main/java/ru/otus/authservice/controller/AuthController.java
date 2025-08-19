@@ -2,9 +2,11 @@ package ru.otus.authservice.controller;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.otus.authservice.model.RedirectResponse;
 import ru.otus.authservice.model.Token;
 import ru.otus.authservice.model.User;
 import ru.otus.authservice.service.AuthService;
@@ -32,8 +34,16 @@ public class AuthController {
         if (!authService.authenticate(login, password)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
-        String token = jwtTokenProvider.generateToken(login);
-        return ResponseEntity.ok(new Token(token));
+
+        RedirectResponse response = authService.getRedirectInfo(login);
+
+        if (response != null) {
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Location", response.getTargetUrl());
+            headers.add("Authorization", "Bearer " + response.getToken());
+            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
     }
 
     @PostMapping("/save")

@@ -4,14 +4,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.otus.authservice.model.RedirectResponse;
 import ru.otus.authservice.model.User;
 import ru.otus.authservice.repository.UserRepository;
+import ru.otus.authservice.token.JwtTokenProvider;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -32,6 +31,9 @@ public class AuthService {
     private RestTemplate restTemplate;
 
     @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
     private HttpServletRequest httpServletRequest;
 
     private static final Pattern BROWSER_PATTERN = Pattern.compile("(Chrome|Firefox|Safari|Edge)");
@@ -39,64 +41,48 @@ public class AuthService {
 
     public boolean authenticate(String login, String password) {
         User dbUser = userRepository.findByUsername(login);
-/*
-        Enumeration<String> headerNames = httpServletRequest.getHeaderNames();
-        StringBuilder result = new StringBuilder();
-
-        while (headerNames.hasMoreElements()) {
-            String headerName = headerNames.nextElement();
-            String headerValue = httpServletRequest.getHeader(headerName);
-            result.append(headerName).append(": ").append(headerValue).append("\n");
-        }
-        log.info(result.toString());
-
-*/
         if (dbUser != null && dbUser.getPassword().equals(password)) {
-
-            String userAgent = httpServletRequest.getHeader("User-Agent");
-            String acceptLanguage = httpServletRequest.getHeader("Accept-Language");
-
-            log.info("acceptLanguage : " + acceptLanguage);
-
-            Map<String, Object> routingData = new HashMap<>();
-            routingData.put("device", parseDeviceFromUserAgent(userAgent));
-            routingData.put("browser", parseBrowserFromUserAgent(userAgent));
-            routingData.put("region", extractRegionFromAcceptLanguage(acceptLanguage));
-
-            System.out.println(routingData);
-
-            log.info(routingData.toString());
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(routingData, headers);
-
-            try {
-                URI uri = UriComponentsBuilder.fromHttpUrl("http://localhost:8082/route/context")
-                        .queryParam("device", routingData.get("device"))
-                        .queryParam("browser", routingData.get("browser"))
-                        .queryParam("region", routingData.get("region"))
-                        .build()
-                        .encode()
-                        .toUri();
-
-                log.info("URI : " + uri);
-
-               restTemplate.getForObject(uri, String.class);
-
-//                restTemplate.postForObject("http://localhost:8082/route/context",
-//                        request,
-//                        String.class,
-//                        routingData);
-
-                return true;
-
-            } catch (Exception e) {
-                log.error("Ошибка связи с Router Controller:", e);
-                return false;
-            }
+            return true;
         }
         return false;
+    }
+
+    public RedirectResponse getRedirectInfo(String username) {
+
+        String userAgent = httpServletRequest.getHeader("User-Agent");
+        String acceptLanguage = httpServletRequest.getHeader("Accept-Language");
+
+        log.info("acceptLanguage : " + acceptLanguage);
+
+        Map<String, Object> routingData = new HashMap<>();
+        routingData.put("device", parseDeviceFromUserAgent(userAgent));
+        routingData.put("browser", parseBrowserFromUserAgent(userAgent));
+        routingData.put("region", extractRegionFromAcceptLanguage(acceptLanguage));
+
+        log.info(routingData.toString());
+
+        try {
+            URI uri = UriComponentsBuilder.fromHttpUrl("http://localhost:8082/route/context")
+                    .queryParam("device", routingData.get("device"))
+                    .queryParam("browser", routingData.get("browser"))
+                    .queryParam("region", routingData.get("region"))
+                    .build()
+                    .encode()
+                    .toUri();
+
+            log.info("URI : " + uri);
+
+            String targetUrl = restTemplate.getForObject(uri, String.class);
+
+            log.info("targetUrl : " + targetUrl);
+
+            String token = jwtTokenProvider.generateToken(username);
+
+            return new RedirectResponse(targetUrl, token);
+        } catch (Exception e) {
+            log.error("Ошибка связи с Router Controller:", e);
+            return null;
+        }
     }
 
     private String parseBrowserFromUserAgent(String userAgent) {

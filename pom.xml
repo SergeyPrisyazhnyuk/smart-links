@@ -24,12 +24,24 @@
   </properties>
 
   <modules>
+    <module>common</module>
+
     <module>auth-service</module>
-      <module>routing-service</module>
+    <module>routing-service</module>
     <module>rule-management-service</module>
     <module>page-rendering-service</module>
 
     <module>jacoco-aggregated-report</module>
   </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>ru.otus</groupId>
+        <artifactId>common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
 </project>

@@ -1,35 +1,47 @@
 package ru.otus.rulemanagementservice.controller;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.otus.rulemanagementservice.model.Rule;
+import ru.otus.common.model.MatchingResult;
+import ru.otus.rulemanagementservice.model.RouteUrl;
 import ru.otus.rulemanagementservice.service.RuleService;
 
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/rules")
 public class RuleController {
 
+    @Autowired
     private final RuleService ruleService;
 
-    public RuleController(RuleService ruleService) {
+/*    public RuleController(RuleService ruleService) {
         this.ruleService = ruleService;
+    }*/
+
+    @GetMapping("/match")
+    public MatchingResult matchRoutes(@RequestParam(required=false) String device,
+                                      @RequestParam(required=false) String browser,
+                                      @RequestParam(required=false) String region) {
+        return ruleService.match(device, browser, region);
     }
 
     @GetMapping
-    public List<Rule> listRules() {
+    public List<RouteUrl> listRules() {
         return ruleService.listRules();
     }
 
     @PostMapping
-    public Rule createRule(@RequestBody Rule rule) {
+    public RouteUrl createRule(@RequestBody RouteUrl rule) {
         return ruleService.createRule(rule);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Rule> updateRule(@PathVariable Long id, @RequestBody Rule updatedRule) {
-        Rule updated = ruleService.updateRule(id, updatedRule);
+    public ResponseEntity<RouteUrl> updateRule(@PathVariable Long id, @RequestBody RouteUrl updatedRule) {
+        RouteUrl updated = ruleService.updateRule(id, updatedRule);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         } else {

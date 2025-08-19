@@ -2,12 +2,15 @@ package ru.otus.routingservice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+import ru.otus.common.model.MatchingResult;
 import ru.otus.routingservice.model.Context;
-import ru.otus.routingservice.model.Rule;
 
+import java.net.URI;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 @RequiredArgsConstructor
@@ -15,47 +18,34 @@ import java.util.Objects;
 @Slf4j
 public class RoutingService {
 
-    // tbd
-    Rule rule = Rule.builder()
-            .id(1L)
-            .condition("device=iPhone")
-            .destinationURL("/iphone-dashboard")
-            .build();
-
-    Rule rule2 = Rule.builder()
-            .id(2L)
-            .condition("device=Android")
-            .destinationURL("/android-dashboard")
-            .build();
-
-    Rule rule3 = Rule.builder()
-            .id(2L)
-            .condition("device=DESKTOP")
-            .destinationURL("/android-dashboard")
-            .build();
-
-    private List<Rule> rules = Arrays.asList(rule, rule2, rule3);
-
-
-    public RoutingService(List<Rule> rules) {
-        this.rules = rules;
-    }
+    @Autowired
+    private RestTemplate restTemplate;
 
     public String route(Context context) {
         log.info("Context : " + context.toString());
-        for (Rule rule : rules) {
-            if (matchRule(rule.getCondition(), context)) {
-                log.info("!!!Running rule condition check!!!");
-                return rule.getDestinationURL();
-            }
+
+        URI rulesUri = UriComponentsBuilder.fromHttpUrl("http://localhost:8083/rules/match")
+                .queryParam("device", context.getDevice())
+                .queryParam("browser", context.getBrowser())
+                .queryParam("region", context.getRegion())
+                .build()
+                .encode()
+                .toUri();
+
+        MatchingResult result = restTemplate.getForObject(rulesUri, MatchingResult.class);
+
+        if (result != null && !result.getUrls().isEmpty()) {
+            return result.getUrls().get(0);
         }
         return "/default";
     }
 
     private boolean matchRule(String condition, Context context) {
         try {
-            // Разделяем сложное условие на отдельные части по оператору 'AND'
+            log.info("!!!! context.toString() : " + context.toString());
+            log.info("!!!! Condition : " + condition);
             String[] conditions = condition.split("\\s*AND\\s*");
+            log.info("!!!! Conditions : " + Arrays.toString(conditions));
 
             for (String cond : conditions) {
                 int equalsIndex = cond.indexOf('=');
@@ -65,7 +55,10 @@ public class RoutingService {
                 }
 
                 String fieldName = cond.substring(0, equalsIndex).trim();
-                String valueStr = cond.substring(equalsIndex + 1).replaceAll("^['\"]|['\"]$", "").trim(); // Удаляем кавычки
+                String valueStr = cond.substring(equalsIndex + 1).replaceAll("^['\"]|['\"]$", "").trim();
+                log.info("!!!! fieldName : " + fieldName);
+                log.info("!!!! valueStr : " + valueStr);
+
 
                 switch (fieldName.toLowerCase()) {
                     case "device":

@@ -7,7 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.otus.rulemanagementservice.model.Rule;
+import ru.otus.rulemanagementservice.model.RouteUrl;
 import ru.otus.rulemanagementservice.service.RuleService;
 
 import java.util.Arrays;
@@ -31,13 +31,13 @@ class RuleControllerTest {
     @MockBean
     private RuleService ruleService;
 
-    private List<Rule> exampleRules;
+    private List<RouteUrl> exampleRules;
 
     @BeforeEach
     void setup() {
         exampleRules = Arrays.asList(
-                new Rule(1L, "device='iPhone'", "/iphone"),
-                new Rule(2L, "device='Android'", "/android")
+                new RouteUrl(1L, "device='iPhone'", "/iphone"),
+                new RouteUrl(2L, "device='Android'", "/android")
         );
     }
 
@@ -56,8 +56,8 @@ class RuleControllerTest {
 
     @Test
     void createNewRuleIsSuccessfulTest() throws Exception {
-        Rule newRule = new Rule(null, "device='Windows'", "/windows");
-        given(ruleService.createRule(any())).willReturn(new Rule(3L, "device='Windows'", "/windows"));
+        RouteUrl newRule = new RouteUrl(null, "device='Windows'", "/windows");
+        given(ruleService.createRule(any())).willReturn(new RouteUrl(3L, "device='Windows'", "/windows"));
 
         mockMvc.perform(post("/rules")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -71,8 +71,8 @@ class RuleControllerTest {
 
     @Test
     void updateExistingRuleWorksAsExpectedTest() throws Exception {
-        Rule existingRule = new Rule(1L, "device='iPhone'", "/iphone");
-        Rule updatedRule = new Rule(1L, "device='MacBook'", "/macbook");
+        RouteUrl existingRule = new RouteUrl(1L, "device='iPhone'", "/iphone");
+        RouteUrl updatedRule = new RouteUrl(1L, "device='MacBook'", "/macbook");
         given(ruleService.updateRule(eq(1L), any())).willReturn(updatedRule);
 
         mockMvc.perform(put("/rules/1")
