@@ -6,7 +6,7 @@ import ru.otus.rulemanagementservice.model.RouteUrl;
 import java.util.List;
 import java.util.Set;
 
-public interface RuleUrlRepository extends JpaRepository<RouteUrl, Long> {
+public interface RouteUrlRepository extends JpaRepository<RouteUrl, Long> {
     List<RouteUrl> findByRouteRuleIdIn(Set<Long> ruleIds);
 
 }

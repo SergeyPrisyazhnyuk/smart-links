@@ -22,17 +22,21 @@ public class RoutingService {
     private RestTemplate restTemplate;
 
     public String route(Context context) {
-        log.info("Context : " + context.toString());
+        log.info("Matching rules for " + context.getDevice() + " " + context.getBrowser() + " " + context.getRegion());
 
         URI rulesUri = UriComponentsBuilder.fromHttpUrl("http://localhost:8083/rules/match")
-                .queryParam("device", context.getDevice())
-                .queryParam("browser", context.getBrowser())
-                .queryParam("region", context.getRegion())
+                .queryParam("device", context.getDevice().toLowerCase())
+                .queryParam("browser", context.getBrowser().toLowerCase())
+                .queryParam("region", context.getRegion().toLowerCase())
                 .build()
                 .encode()
                 .toUri();
 
+        log.info("Getting rules from uri " + rulesUri);
+
         MatchingResult result = restTemplate.getForObject(rulesUri, MatchingResult.class);
+
+        log.info("MatchingResult " + result);
 
         if (result != null && !result.getUrls().isEmpty()) {
             return result.getUrls().get(0);
@@ -40,7 +44,7 @@ public class RoutingService {
         return "/default";
     }
 
-    private boolean matchRule(String condition, Context context) {
+/*    private boolean matchRule(String condition, Context context) {
         try {
             log.info("!!!! context.toString() : " + context.toString());
             log.info("!!!! Condition : " + condition);
@@ -86,5 +90,5 @@ public class RoutingService {
             System.err.println("Ошибка обработки условия '" + condition + "': " + e.getMessage());
             return false;
         }
-    }
+    }*/
 }

@@ -10,10 +10,15 @@ import lombok.*;
 @Getter
 @Setter
 public class RouteUrl {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String route_id;
+
+    @Column(name = "route_rule_id")
+    private Long routeRuleId;
+
+    @Column(name = "destination_url")
     private String destinationURL;
 
 }

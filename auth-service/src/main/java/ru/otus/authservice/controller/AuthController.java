@@ -20,7 +20,6 @@ import java.util.List;
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping
     public String helloAuthService() {

@@ -1,14 +1,19 @@
 package ru.otus.common.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
+import java.util.Objects;
 
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class MatchingResult {
     private List<String> urls;
+
+    @Override
+    public String toString() {
+
+    return Objects.toString(urls);    }
 }
