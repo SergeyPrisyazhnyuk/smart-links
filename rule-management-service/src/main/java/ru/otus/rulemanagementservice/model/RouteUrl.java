@@ -1,22 +1,24 @@
 package ru.otus.rulemanagementservice.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
+@Entity(name = "route_url")
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter
 @Setter
-public class Rule {
+public class RouteUrl {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String condition;
+
+    @Column(name = "route_rule_id")
+    private Long routeRuleId;
+
+    @Column(name = "destination_url")
     private String destinationURL;
 
 }
