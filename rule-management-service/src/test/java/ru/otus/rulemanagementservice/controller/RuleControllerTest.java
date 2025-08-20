@@ -1,117 +1,121 @@
-/*
 package ru.otus.rulemanagementservice.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.otus.common.model.MatchingResult;
 import ru.otus.rulemanagementservice.model.RouteUrl;
 import ru.otus.rulemanagementservice.service.RuleService;
 
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(RuleController.class)
+@ExtendWith(MockitoExtension.class)
 class RuleControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private RuleService ruleService;
 
-    private List<RouteUrl> exampleRules;
+    @InjectMocks
+    private RuleController ruleController;
+
+    private MockMvc mockMvc;
 
     @BeforeEach
     void setup() {
-        exampleRules = Arrays.asList(
-                new RouteUrl(1L, "device='iPhone'", "/iphone"),
-                new RouteUrl(2L, "device='Android'", "/android")
-        );
+        mockMvc = MockMvcBuilders.standaloneSetup(ruleController).build();
+    }
+
+
+    @Test
+    void testMatchRoutes_Success() throws Exception {
+        MatchingResult matchingResult = new MatchingResult(Arrays.asList("/rule-matched"));
+        when(ruleService.match(eq("android"), eq("chrome"), eq("RU")))
+                .thenReturn(matchingResult);
+
+        mockMvc.perform(get("/rules/match")
+                        .param("device", "android")
+                        .param("browser", "chrome")
+                        .param("region", "RU"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['urls'][0]", containsString("/rule-matched")));
     }
 
     @Test
-    void listRulesReturnsAllRulesTest() throws Exception {
-        given(ruleService.listRules()).willReturn(exampleRules);
+    void testListRules() throws Exception {
+        List<RouteUrl> routes = Arrays.asList(new RouteUrl(1L, "/url1"), new RouteUrl(2L, "/url2"));
+        when(ruleService.listRules()).thenReturn(routes);
 
         mockMvc.perform(get("/rules"))
+                .andDo(result -> System.out.println("Response body: " + result.getResponse().getContentAsString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.[0].id").value(1L))
-                .andExpect(jsonPath("$.[0].condition").value("device='iPhone'"))
-                .andExpect(jsonPath("$.[1].id").value(2L))
-                .andExpect(jsonPath("$.[1].condition").value("device='Android'"));
+                .andExpect(jsonPath("$[1]['destinationURL']", containsString("/url2")));
     }
 
     @Test
-    void createNewRuleIsSuccessfulTest() throws Exception {
-        RouteUrl newRule = new RouteUrl(null, "device='Windows'", "/windows");
-        given(ruleService.createRule(any())).willReturn(new RouteUrl(3L, "device='Windows'", "/windows"));
+    void testCreateRule() throws Exception {
+        RouteUrl newRule = new RouteUrl(1L, "/new-rule");
+        when(ruleService.createRule(any(RouteUrl.class)))
+                .thenReturn(newRule);
 
         mockMvc.perform(post("/rules")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\":null,\"condition\":\"device='Windows'\",\"destinationURL\":\"/windows\"}")
-                )
+                        .content("{\"id\":1,\"url\":\"/new-rule\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(3L))
-                .andExpect(jsonPath("$.condition").value("device='Windows'"))
-                .andExpect(jsonPath("$.destinationURL").value("/windows"));
+                .andExpect(jsonPath("$.destinationURL", containsString("/new-rule")));
     }
 
     @Test
-    void updateExistingRuleWorksAsExpectedTest() throws Exception {
-        RouteUrl existingRule = new RouteUrl(1L, "device='iPhone'", "/iphone");
-        RouteUrl updatedRule = new RouteUrl(1L, "device='MacBook'", "/macbook");
-        given(ruleService.updateRule(eq(1L), any())).willReturn(updatedRule);
+    void testUpdateRule_Success() throws Exception {
+        RouteUrl updatedRule = new RouteUrl(1L, "/updated-rule");
+        when(ruleService.updateRule(eq(1L), any(RouteUrl.class)))
+                .thenReturn(updatedRule);
 
         mockMvc.perform(put("/rules/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"id\":1,\"condition\":\"device='MacBook'\",\"destinationURL\":\"/macbook\"} ")
-                )
+                        .content("{\"id\":1,\"url\":\"/updated-rule\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.condition").value("device='MacBook'"))
-                .andExpect(jsonPath("$.destinationURL").value("/macbook"));
+                .andExpect(jsonPath("$.destinationURL", containsString("/updated-rule")));
     }
 
     @Test
-    void deleteRuleRemovesItProperlyTest() throws Exception {
+    void testUpdateRule_NotFound() throws Exception {
+        when(ruleService.updateRule(eq(2L), any(RouteUrl.class)))
+                .thenReturn(null);
 
-        doNothing().when(ruleService).deleteRule(eq(1L));
+        mockMvc.perform(put("/rules/2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\":2,\"url\":\"/nonexistent-rule\"}"))
+                .andExpect(status().isNotFound());
+    }
 
+    @Test
+    void testDeleteRule_Success() throws Exception {
         mockMvc.perform(delete("/rules/1"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void returnsErrorOnNonexistentIdDuringUpdateTest() throws Exception {
-        given(ruleService.updateRule(eq(999L), any())).willReturn(null);
+    void testDeleteRule_NotFound() throws Exception {
+        RuntimeException ex = new RuntimeException("Rule not found");
+        doThrow(ex).when(ruleService).deleteRule(eq(2L));
 
-        mockMvc.perform(put("/rules/999")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(" {\"id\":999,\"condition\":\"device='Other'\",\"destinationURL\":\"/other\"} ")
-                )
+        mockMvc.perform(delete("/rules/2"))
                 .andExpect(status().isNotFound());
     }
-
-    @Test
-    void returnsErrorOnNonexistentIdDuringDeletionTest() throws Exception {
-        doThrow(new RuntimeException("Rule not found")).when(ruleService).deleteRule(eq(999L));
-
-        mockMvc.perform(delete("/rules/999"))
-                .andExpect(status().isNotFound());
-
-    }
-}*/
+}

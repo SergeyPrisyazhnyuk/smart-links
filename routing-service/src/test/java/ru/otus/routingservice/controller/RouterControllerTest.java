@@ -1,81 +1,104 @@
-/*
 package ru.otus.routingservice.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.otus.routingservice.model.Context;
 import ru.otus.routingservice.service.RoutingService;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(RouterController.class)
+@ExtendWith(MockitoExtension.class)
 class RouterControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private RoutingService routingService;
 
+    @InjectMocks
+    private RouterController routerController;
+
+    private MockMvc mockMvc;
+
     @BeforeEach
-    void setUp() {
-        given(routingService.route(any(Context.class))).willAnswer(invocationOnMock -> {
-            Context context = invocationOnMock.getArgument(0);
-            return "Routing result for " + context.getDevice() +
-                    ", " + context.getBrowser() +
-                    ", " + context.getRegion();
-        });
+    void setup() {
+        mockMvc = MockMvcBuilders.standaloneSetup(routerController).build();
     }
 
     @Test
-    void handleValidParametersAndReturnCorrectResponseTest() throws Exception {
-        mockMvc.perform(
-                        get("/route/context")
-                                .param("device", "iPhone")
-                                .param("browser", "Safari")
-                                .param("region", "Paris")
-                )
-                .andDo(print()) // Выводит результат в консоль
+    void testRouteSuccess() throws Exception {
+        String expectedResult = "/homepage";
+        when(routingService.route(any(Context.class))).thenReturn(expectedResult);
+
+        mockMvc.perform(get("/route/context")
+                        .param("device", "desktop")
+                        .param("browser", "chrome")
+                        .param("region", "RU"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Routing result for iPhone, Safari, Paris"));
+                .andExpect(content().string(expectedResult));
     }
 
     @Test
-    void handlePartialParametersTest() throws Exception {
-        mockMvc.perform(
-                        get("/route/context")
-                                .param("device", "Linux")
-                ) // Передаем только один параметр
-                .andDo(print())
+    void testRouteBadInput() throws Exception {
+        String expectedResult = "/error-page";
+        when(routingService.route(any(Context.class))).thenReturn(expectedResult);
+
+        mockMvc.perform(get("/route/context")
+                        .param("device", "")
+                        .param("browser", "invalid-browser")
+                        .param("region", ""))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Routing result for Linux, Chrome, Moscow"));
+                .andExpect(content().string(expectedResult));
     }
 
     @Test
-    void useDefaultValuesForMissingParametersTest() throws Exception {
-        mockMvc.perform(
-                        get("/route/context")
-                ) // Без передачи параметров
-                .andDo(print())
+    void testRouteEmptyParameters() throws Exception {
+        String expectedResult = "/default-page";
+        when(routingService.route(any(Context.class))).thenReturn(expectedResult);
+
+        mockMvc.perform(get("/route/context")
+                        .param("device", "")
+                        .param("browser", "")
+                        .param("region", ""))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Routing result for Android, Chrome, Moscow"));
+                .andExpect(content().string(expectedResult));
     }
 
     @Test
-    void useDefaultValuesForMissingAndEmptyParametersTest() throws Exception {
-        mockMvc.perform(
-                        get("/route/context")
-                                .param("device", "")
-                )
-                .andDo(print())
-                .andExpect(content().string("Routing result for Android, Chrome, Moscow"));
+    void testRouteLargeStrings() throws Exception {
+        String largeString = "X".repeat(255);
+
+        String expectedResult = "/large-string-page";
+        when(routingService.route(any(Context.class))).thenReturn(expectedResult);
+
+        mockMvc.perform(get("/route/context")
+                        .param("device", largeString)
+                        .param("browser", largeString)
+                        .param("region", largeString))
+                .andExpect(status().isOk())
+                .andExpect(content().string(expectedResult));
     }
-}*/
+
+    @Test
+    void testRouteSpecialChars() throws Exception {
+        String specialChars = "@#!$$%%^^&&***";
+
+        String expectedResult = "/special-chars-page";
+        when(routingService.route(any(Context.class))).thenReturn(expectedResult);
+
+        mockMvc.perform(get("/route/context")
+                        .param("device", specialChars)
+                        .param("browser", specialChars)
+                        .param("region", specialChars))
+                .andExpect(status().isOk())
+                .andExpect(content().string(expectedResult));
+    }
+}

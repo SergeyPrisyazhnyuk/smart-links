@@ -1,36 +1,32 @@
-/*
 package ru.otus.authservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.servlet.MockMvc;
-import ru.otus.authservice.AuthServiceApplication;
-import ru.otus.authservice.model.User;
-import ru.otus.authservice.service.AuthService;
-import ru.otus.authservice.token.JwtTokenProvider;
-
-import java.util.Arrays;
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = AuthServiceApplication.class)
-@AutoConfigureMockMvc
-@ExtendWith(SpringExtension.class)
-public class AuthControllerTest {
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import ru.otus.authservice.AuthServiceApplication;
+import ru.otus.authservice.model.RedirectResponse;
+import ru.otus.authservice.model.Token;
+import ru.otus.authservice.model.User;
+import ru.otus.authservice.service.AuthService;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@WebMvcTest(AuthController.class)
+@ContextConfiguration(classes = {AuthServiceApplication.class})
+class AuthControllerTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -38,124 +34,84 @@ public class AuthControllerTest {
     @MockBean
     AuthService authService;
 
-    @MockBean
-    JwtTokenProvider jwtTokenProvider;
+    ObjectMapper objectMapper = new ObjectMapper();
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    Token token = new Token("sample-token");
+    User user = new User(1L, "test-user", "test-password");
+    List<User> users = new ArrayList<>();
 
-    @Test
-    public void successfulLoginTest() throws Exception {
-        User user = new User();
-        user.setUsername("user");
-        user.setPassword("password");
-
-        when(authService.authenticate(any())).thenReturn(true);
-        when(jwtTokenProvider.generateToken(eq("user"))).thenReturn("jwt-token");
-
-        mockMvc.perform(
-                        post("/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .accept(MediaType.APPLICATION_JSON)
-                                .content("{\"username\": \"user\", \"password\": \"password\"}")
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.value").value("jwt-token"));
+    @BeforeEach
+    void setUp() throws Exception {
+        users.clear();
+        users.add(new User(1L, "user1", "pass1"));
+        users.add(new User(2L, "user2", "pass2"));
     }
 
     @Test
-    public void failedLoginTest() throws Exception {
-        User user = new User();
-        user.setUsername("user");
-        user.setPassword("wrong-password");
+    void testLoginSuccess() throws Exception {
+        when(authService.authenticate(any(), any())).thenReturn(true);
+        RedirectResponse redirectResponse = new RedirectResponse("target-url", "token-value");
+        when(authService.getRedirectInfo(any())).thenReturn(redirectResponse);
 
-        when(authService.authenticate(any())).thenReturn(false);
+        this.mockMvc.perform(get("/auth/login").param("username", "test-user").param("password", "test-pass"))
+                .andDo(print())
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "target-url"))
+                .andExpect(header().string("Authorization", "Bearer token-value"));
+    }
 
-        mockMvc.perform(
-                        post("/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"username\": \"user\", \"password\": \"wrong-password\"}")
-                )
+    @Test
+    void testLoginFailure() throws Exception {
+        when(authService.authenticate(any(), any())).thenReturn(false);
+
+        this.mockMvc.perform(get("/auth/login").param("username", "invalid-user").param("password", "wrong-pass"))
+                .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    public void addUserTest() throws Exception {
-        User user = new User();
-        user.setUsername("testUser");
-        user.setPassword("testPass");
+    void testAddUser() throws Exception {
+        when(authService.addUser(any(User.class))).thenReturn(user);
 
-        when(authService.addUser(any(User.class)))
-                .thenReturn(user);
-
-        mockMvc.perform(post("/auth/save")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
+        this.mockMvc.perform(post("/auth/save")
+                        .content(objectMapper.writeValueAsString(user))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(content().json(objectMapper.writeValueAsString(user)));
     }
 
     @Test
-    public void getUsersTest() throws Exception {
-
-        User user1 = new User();
-        user1.setId(1L);
-        user1.setUsername("user1");
-        user1.setPassword("pass1");
-
-        User user2 = new User();
-        user2.setId(2L);
-        user2.setUsername("user2");
-        user2.setPassword("pass2");
-
-
-        List<User> users = Arrays.asList(
-                user1,
-                user2
-        );
-
+    void testGetUsers() throws Exception {
         when(authService.getUsers()).thenReturn(users);
 
-        mockMvc.perform(get("/auth/users"))
+        this.mockMvc.perform(get("/auth/users"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().json("[" +
-                        "{\"id\":1,\"username\":\"user1\",\"password\":\"pass1\"}," +
-                        "{\"id\":2,\"username\":\"user2\",\"password\":\"pass2\"}" +
-                        "]"));
+                .andExpect(content().json(objectMapper.writeValueAsString(users)));
     }
 
     @Test
-    public void getUserByIdTest() throws Exception {
-        User user1 = new User();
-        user1.setId(1L);
-        user1.setUsername("user1");
-        user1.setPassword("pass1");
+    void testGetUserById() throws Exception {
+        when(authService.getUserById(any(Long.class))).thenReturn(user);
 
-        when(authService.getUserById(1L)).thenReturn(user1);
-
-        mockMvc.perform(get("/auth/users/" + 1L))
+        this.mockMvc.perform(get("/auth/users/" + user.getId()))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().json("{\"id\":1,\"username\":\"user1\",\"password\":\"pass1\"}"));
+                .andExpect(content().json(objectMapper.writeValueAsString(user)));
     }
 
     @Test
-    public void deleteUserByIdTest() throws Exception {
-        long userId = 1L;
-        doNothing().when(authService).deleteUserById(userId);
-
-        mockMvc.perform(delete("/auth/users/" + userId))
+    void testDeleteUserById() throws Exception {
+        this.mockMvc.perform(delete("/auth/users/" + user.getId()))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
-    public void deleteAllUsersTest() throws Exception {
-        doNothing().when(authService).deleteAllUsers();
-
-        mockMvc.perform(delete("/auth/users"))
+    void testDeleteAllUsers() throws Exception {
+        this.mockMvc.perform(delete("/auth/users"))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
-
-}*/
+}

@@ -1,86 +1,120 @@
-/*
 package ru.otus.rulemanagementservice.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
+import ru.otus.common.model.MatchingResult;
+import ru.otus.rulemanagementservice.model.RouteRule;
 import ru.otus.rulemanagementservice.model.RouteUrl;
+import ru.otus.rulemanagementservice.repository.RouteRuleRepository;
 import ru.otus.rulemanagementservice.repository.RouteUrlRepository;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class RuleServiceTest {
+class RuleServiceTest {
+
+    @Mock
+    private RouteUrlRepository routeUrlRepository;
+
+    @Mock
+    private RouteRuleRepository routeRuleRepository;
 
     @InjectMocks
     private RuleService ruleService;
 
-    @Mock
-    private RouteUrlRepository ruleRepository;
+    private List<RouteRule> fakeRouteRules;
+    private List<RouteUrl> fakeRouteUrls;
 
-    @Test
-    public void listRulesReturnsAllRulesTest() {
-        List<RouteUrl> expectedRules = Arrays.asList(
-                new RouteUrl(1L, "device='iPhone'", "/iphone-dashboard"),
-                new RouteUrl(2L, "device='Android'", "/android-dashboard")
-        );
+    @BeforeEach
+    void setUp() {
+        fakeRouteRules = new ArrayList<>();
+        fakeRouteUrls = new ArrayList<>();
 
-        when(ruleRepository.findAll()).thenReturn(expectedRules);
+        RouteRule rule1 = new RouteRule();
+        rule1.setId(1L);
+        rule1.setDevice("Android");
+        rule1.setBrowser("Chrome");
+        rule1.setRegion("RU");
+        fakeRouteRules.add(rule1);
 
-        List<RouteUrl> actualRules = ruleService.listRules();
-
-        assertEquals(expectedRules.size(), actualRules.size());
-        assertTrue(actualRules.containsAll(expectedRules));
+        RouteUrl url1 = new RouteUrl();
+        url1.setId(1L);
+        url1.setDestinationURL("https://example.com/android-chrome-ru");
+        url1.setRouteRuleId(1L);
+        fakeRouteUrls.add(url1);
     }
 
     @Test
-    public void createRuleSavesNewRuleTest() {
-        RouteUrl newRule = new RouteUrl(null, "device='Windows'", "/windows-dashboard");
+    void testMatch() {
+        when(routeRuleRepository.findAll(any(Specification.class))).thenReturn(fakeRouteRules);
+        when(routeUrlRepository.findByRouteRuleIdIn(Set.of(1L))).thenReturn(fakeRouteUrls);
 
-        when(ruleRepository.save(any(RouteUrl.class))).thenAnswer(invocation -> {
-            RouteUrl rule = invocation.getArgument(0);
-            rule.setId(1L);
-            return rule;
-        });
+        MatchingResult result = ruleService.match("Android", "Chrome", "RU");
 
-        RouteUrl savedRule = ruleService.createRule(newRule);
-
-        assertNotNull(savedRule.getId());
-        assertEquals(newRule.getCondition(), savedRule.getCondition());
-        assertEquals(newRule.getDestinationURL(), savedRule.getDestinationURL());
+        assertEquals(1, result.getUrls().size());
+        assertEquals("https://example.com/android-chrome-ru", result.getUrls().get(0));
     }
 
     @Test
-    public void updateRuleUpdatesExistingRuleTest() {
-        RouteUrl oldRule = new RouteUrl(1L, "device='iPhone'", "/iphone-dashboard");
-        RouteUrl updatedRule = new RouteUrl(1L, "device='Mac'", "/mac-dashboard");
+    void testMatch_NoMatches() {
+        when(routeRuleRepository.findAll(any(Specification.class))).thenReturn(List.of());
+        when(routeUrlRepository.findByRouteRuleIdIn(Set.of())).thenReturn(List.of());
 
-        when(ruleRepository.save(any(RouteUrl.class))).thenAnswer(i -> i.getArguments()[0]);
+        MatchingResult result = ruleService.match("iPhone", "Safari", "US");
 
-        RouteUrl result = ruleService.updateRule(oldRule.getId(), updatedRule);
-
-        assertEquals(result.getId(), updatedRule.getId());
-        assertEquals(result.getCondition(), updatedRule.getCondition());
-        assertEquals(result.getDestinationURL(), updatedRule.getDestinationURL());
+        assertEquals(0, result.getUrls().size());
     }
 
     @Test
-    public void deleteRuleDeletesRuleByIdTest() {
-        Long ruleId = 1L;
+    void testListRules() {
+        when(routeUrlRepository.findAll()).thenReturn(fakeRouteUrls);
 
-        doNothing().when(ruleRepository).deleteById(ruleId);
+        List<RouteUrl> result = ruleService.listRules();
 
-        ruleService.deleteRule(ruleId);
-
-        verify(ruleRepository, times(1)).deleteById(ruleId);
+        assertEquals(1, result.size());
+        assertEquals("https://example.com/android-chrome-ru", result.get(0).getDestinationURL());
     }
 
+    @Test
+    void testCreateRule() {
+        RouteUrl newRule = new RouteUrl();
+        newRule.setDestinationURL("https://example.com/new-rule");
+        when(routeUrlRepository.save(newRule)).thenReturn(newRule);
+
+        RouteUrl createdRule = ruleService.createRule(newRule);
+
+        assertEquals("https://example.com/new-rule", createdRule.getDestinationURL());
+    }
+
+    @Test
+    void testUpdateRule() {
+        RouteUrl existingRule = new RouteUrl();
+        existingRule.setId(1L);
+        existingRule.setDestinationURL("https://example.com/update-test");
+        when(routeUrlRepository.save(existingRule)).thenReturn(existingRule);
+
+        RouteUrl updatedRule = ruleService.updateRule(1L, existingRule);
+
+        assertEquals("https://example.com/update-test", updatedRule.getDestinationURL());
+    }
+
+    @Test
+    void testDeleteRule() {
+        RouteUrl ruleToDelete = new RouteUrl();
+        ruleToDelete.setId(1L);
+        ruleToDelete.setDestinationURL("https://example.com/delete-me");
+
+        ruleService.deleteRule(1L);
+    }
 }
-*/
