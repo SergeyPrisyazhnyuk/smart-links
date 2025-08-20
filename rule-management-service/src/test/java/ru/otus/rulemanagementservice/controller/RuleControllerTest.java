@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.otus.common.model.MatchingResult;
 import ru.otus.rulemanagementservice.model.RouteUrl;
-import ru.otus.rulemanagementservice.service.RuleService;
+import ru.otus.rulemanagementservice.service.RuleManagementService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RuleControllerTest {
 
     @Mock
-    private RuleService ruleService;
+    private RuleManagementService ruleManagementService;
 
     @InjectMocks
     private RuleController ruleController;
@@ -45,7 +45,7 @@ class RuleControllerTest {
     @Test
     void testMatchRoutes_Success() throws Exception {
         MatchingResult matchingResult = new MatchingResult(Arrays.asList("/rule-matched"));
-        when(ruleService.match(eq("android"), eq("chrome"), eq("RU")))
+        when(ruleManagementService.match(eq("android"), eq("chrome"), eq("RU")))
                 .thenReturn(matchingResult);
 
         mockMvc.perform(get("/rules/match")
@@ -59,7 +59,7 @@ class RuleControllerTest {
     @Test
     void testListRules() throws Exception {
         List<RouteUrl> routes = Arrays.asList(new RouteUrl(1L, "/url1"), new RouteUrl(2L, "/url2"));
-        when(ruleService.listRules()).thenReturn(routes);
+        when(ruleManagementService.listRules()).thenReturn(routes);
 
         mockMvc.perform(get("/rules"))
                 .andDo(result -> System.out.println("Response body: " + result.getResponse().getContentAsString()))
@@ -70,7 +70,7 @@ class RuleControllerTest {
     @Test
     void testCreateRule() throws Exception {
         RouteUrl newRule = new RouteUrl(1L, "/new-rule");
-        when(ruleService.createRule(any(RouteUrl.class)))
+        when(ruleManagementService.createRule(any(RouteUrl.class)))
                 .thenReturn(newRule);
 
         mockMvc.perform(post("/rules")
@@ -83,7 +83,7 @@ class RuleControllerTest {
     @Test
     void testUpdateRule_Success() throws Exception {
         RouteUrl updatedRule = new RouteUrl(1L, "/updated-rule");
-        when(ruleService.updateRule(eq(1L), any(RouteUrl.class)))
+        when(ruleManagementService.updateRule(eq(1L), any(RouteUrl.class)))
                 .thenReturn(updatedRule);
 
         mockMvc.perform(put("/rules/1")
@@ -95,7 +95,7 @@ class RuleControllerTest {
 
     @Test
     void testUpdateRule_NotFound() throws Exception {
-        when(ruleService.updateRule(eq(2L), any(RouteUrl.class)))
+        when(ruleManagementService.updateRule(eq(2L), any(RouteUrl.class)))
                 .thenReturn(null);
 
         mockMvc.perform(put("/rules/2")
@@ -113,7 +113,7 @@ class RuleControllerTest {
     @Test
     void testDeleteRule_NotFound() throws Exception {
         RuntimeException ex = new RuntimeException("Rule not found");
-        doThrow(ex).when(ruleService).deleteRule(eq(2L));
+        doThrow(ex).when(ruleManagementService).deleteRule(eq(2L));
 
         mockMvc.perform(delete("/rules/2"))
                 .andExpect(status().isNotFound());

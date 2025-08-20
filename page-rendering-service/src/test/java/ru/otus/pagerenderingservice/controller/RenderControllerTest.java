@@ -9,7 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.otus.pagerenderingservice.model.PageInfo;
-import ru.otus.pagerenderingservice.service.TemplateRenderer;
+import ru.otus.pagerenderingservice.service.PageRenderingService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RenderControllerTest {
 
     @Mock
-    private TemplateRenderer templateRenderer;
+    private PageRenderingService pageRenderingService;
 
     @InjectMocks
     private RenderController controller;
@@ -35,7 +35,7 @@ class RenderControllerTest {
 
     @Test
     void testRenderPagePositive() throws Exception {
-        when(templateRenderer.render(any(PageInfo.class))).thenReturn("<html><head></head><body>Hello World!</body></html>");
+        when(pageRenderingService.render(any(PageInfo.class))).thenReturn("<html><head></head><body>Hello World!</body></html>");
 
         mvc.perform(get("/desktop/chrome/ru"))
                 .andExpect(status().isOk())

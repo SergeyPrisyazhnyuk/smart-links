@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.otus.pagerenderingservice.model.PageInfo;
-import ru.otus.pagerenderingservice.service.TemplateRenderer;
+import ru.otus.pagerenderingservice.service.PageRenderingService;
 
 @RestController
 @RequiredArgsConstructor
@@ -15,7 +15,7 @@ import ru.otus.pagerenderingservice.service.TemplateRenderer;
 public class RenderController {
 
     @Autowired
-    private TemplateRenderer templateRenderer;
+    private PageRenderingService pageRenderingService;
 
     @GetMapping("/{device}/{browser}/{region}")
     public String renderPage(
@@ -29,6 +29,6 @@ public class RenderController {
                 .region(region)
                 .build();
 
-        return templateRenderer.render(pageInfo);
+        return pageRenderingService.render(pageInfo);
     }
 }

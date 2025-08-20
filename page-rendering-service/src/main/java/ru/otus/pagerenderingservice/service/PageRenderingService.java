@@ -5,7 +5,7 @@ import ru.otus.pagerenderingservice.model.PageInfo;
 
 
 @Service
-public class TemplateRenderer {
+public class PageRenderingService {
 
     public String render(PageInfo info) {
         return String.format("<html lang=\"%s\">\n" +
