@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class RuleServiceTest {
+class RuleManagementServiceTest {
 
     @Mock
     private RouteUrlRepository routeUrlRepository;
@@ -31,7 +31,7 @@ class RuleServiceTest {
     private RouteRuleRepository routeRuleRepository;
 
     @InjectMocks
-    private RuleService ruleService;
+    private RuleManagementService ruleManagementService;
 
     private List<RouteRule> fakeRouteRules;
     private List<RouteUrl> fakeRouteUrls;
@@ -60,7 +60,7 @@ class RuleServiceTest {
         when(routeRuleRepository.findAll(any(Specification.class))).thenReturn(fakeRouteRules);
         when(routeUrlRepository.findByRouteRuleIdIn(Set.of(1L))).thenReturn(fakeRouteUrls);
 
-        MatchingResult result = ruleService.match("Android", "Chrome", "RU");
+        MatchingResult result = ruleManagementService.match("Android", "Chrome", "RU");
 
         assertEquals(1, result.getUrls().size());
         assertEquals("https://example.com/android-chrome-ru", result.getUrls().get(0));
@@ -71,7 +71,7 @@ class RuleServiceTest {
         when(routeRuleRepository.findAll(any(Specification.class))).thenReturn(List.of());
         when(routeUrlRepository.findByRouteRuleIdIn(Set.of())).thenReturn(List.of());
 
-        MatchingResult result = ruleService.match("iPhone", "Safari", "US");
+        MatchingResult result = ruleManagementService.match("iPhone", "Safari", "US");
 
         assertEquals(0, result.getUrls().size());
     }
@@ -80,7 +80,7 @@ class RuleServiceTest {
     void testListRules() {
         when(routeUrlRepository.findAll()).thenReturn(fakeRouteUrls);
 
-        List<RouteUrl> result = ruleService.listRules();
+        List<RouteUrl> result = ruleManagementService.listRules();
 
         assertEquals(1, result.size());
         assertEquals("https://example.com/android-chrome-ru", result.get(0).getDestinationURL());
@@ -92,7 +92,7 @@ class RuleServiceTest {
         newRule.setDestinationURL("https://example.com/new-rule");
         when(routeUrlRepository.save(newRule)).thenReturn(newRule);
 
-        RouteUrl createdRule = ruleService.createRule(newRule);
+        RouteUrl createdRule = ruleManagementService.createRule(newRule);
 
         assertEquals("https://example.com/new-rule", createdRule.getDestinationURL());
     }
@@ -104,7 +104,7 @@ class RuleServiceTest {
         existingRule.setDestinationURL("https://example.com/update-test");
         when(routeUrlRepository.save(existingRule)).thenReturn(existingRule);
 
-        RouteUrl updatedRule = ruleService.updateRule(1L, existingRule);
+        RouteUrl updatedRule = ruleManagementService.updateRule(1L, existingRule);
 
         assertEquals("https://example.com/update-test", updatedRule.getDestinationURL());
     }
@@ -115,6 +115,6 @@ class RuleServiceTest {
         ruleToDelete.setId(1L);
         ruleToDelete.setDestinationURL("https://example.com/delete-me");
 
-        ruleService.deleteRule(1L);
+        ruleManagementService.deleteRule(1L);
     }
 }

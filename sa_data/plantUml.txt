@@ -1,0 +1,101 @@
+#Component
+
+```plantuml
+@startuml
+' Тип диаграммы: компонентная
+title Компонентная диаграмма приложения
+
+skinparam backgroundColor transparent
+skinparam defaultFontName Arial
+skinparam shadowing false
+
+left to right direction
+
+component Frontend <<Frontend>> as FE {
+  note right of FE
+    Интерфейс пользователя
+  end note
+}
+
+component AuthService <<Microservice>> as AS {
+  note left of AS
+    Аутентификация и авторизация\nОтправка данных для рендера
+  end note
+}
+
+component RoutingService <<Microservice>> as RS {
+  note top of RS
+    Выбор маршрута на основе данных\nЗапрос данных для рендера
+  end note
+}
+
+component PageRenderingService <<Microservice>> as PRS {
+  note bottom of PRS
+    Генерация и рендеринг страниц
+  end note
+}
+
+component RuleManagementService <<Microservice>> as RMS {
+  note right of RMS
+    Хранение и управление правилами маршрутизации
+  end note
+}
+
+database AuthDB <<DB>> as AuthDB {
+  note left of AuthDB
+    Данные пользователей и сессий
+  end note
+}
+
+database RuleDB <<DB>> as RuleDB {
+  note right of RuleDB
+    Хранилище правил маршрутизации
+  end note
+}
+
+FE --> AS : Авторизация
+RS --> AS : Отправка данных для рендера
+AS --> PRS : Отправка данных для рендера
+PRS --> FE : Возврат готовой страницы
+AS --> AuthDB : Работа с данными авторизации
+RMS --> RuleDB : Сохранение и чтение правил
+RS --> RMS : Получение правил
+AS --> RS : Запрос данных для рендера
+
+@enduml
+```
+
+#Sequence
+```plantuml
+@startuml
+autonumber
+
+participant Frontend as FE
+participant AuthService as AS
+participant RoutingService as RS
+participant RuleManagementService as RMS
+participant PageRenderingService as PRS
+
+activate FE
+FE -> AS: Авторизация
+activate AS
+AS -> AuthDB: Проверка данных пользователя
+deactivate AuthDB
+AS -> RS: Запрос данных для рендера
+activate RS
+RS -> RMS: Получение правил маршрутизации
+activate RMS
+RMS -> RuleDB: Читает правила из базы данных
+deactivate RuleDB
+RS -> AS: Отправляет данные для рендера
+deactivate RMS
+AS -> PRS: Отправляет данные для рендера
+activate PRS
+PRS -> FE: Возвращает готовую страницу
+deactivate PRS
+deactivate AS
+deactivate RS
+deactivate FE
+
+@enduml
+```

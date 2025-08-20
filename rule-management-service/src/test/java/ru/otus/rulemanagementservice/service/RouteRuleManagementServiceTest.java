@@ -18,7 +18,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
-class RouteRuleServiceTest {
+class RouteRuleManagementServiceTest {
 
     @Mock
     private Root<RouteRule> root;

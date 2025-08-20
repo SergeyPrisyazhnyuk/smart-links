@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RuleService {
+public class RuleManagementService {
 
     @Autowired
     private final RouteUrlRepository routeUrlRepository;

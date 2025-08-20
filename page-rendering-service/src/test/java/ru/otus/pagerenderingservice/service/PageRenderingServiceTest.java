@@ -6,13 +6,13 @@ import ru.otus.pagerenderingservice.model.PageInfo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class TemplateRendererTest {
+class PageRenderingServiceTest {
 
-    private TemplateRenderer renderer;
+    private PageRenderingService renderer;
 
     @BeforeEach
     void setUp() {
-        renderer = new TemplateRenderer();
+        renderer = new PageRenderingService();
     }
 
     @Test
