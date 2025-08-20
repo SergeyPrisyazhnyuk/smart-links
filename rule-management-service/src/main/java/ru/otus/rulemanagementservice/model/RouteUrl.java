@@ -21,4 +21,8 @@ public class RouteUrl {
     @Column(name = "destination_url")
     private String destinationURL;
 
+    public RouteUrl(Long id, String destinationURL) {
+        this.id = id;
+        this.destinationURL = destinationURL;
+    }
 }
