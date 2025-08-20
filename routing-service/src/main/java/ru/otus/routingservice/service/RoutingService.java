@@ -10,8 +10,6 @@ import ru.otus.common.model.MatchingResult;
 import ru.otus.routingservice.model.Context;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -43,52 +41,4 @@ public class RoutingService {
         }
         return "/default";
     }
-
-/*    private boolean matchRule(String condition, Context context) {
-        try {
-            log.info("!!!! context.toString() : " + context.toString());
-            log.info("!!!! Condition : " + condition);
-            String[] conditions = condition.split("\\s*AND\\s*");
-            log.info("!!!! Conditions : " + Arrays.toString(conditions));
-
-            for (String cond : conditions) {
-                int equalsIndex = cond.indexOf('=');
-
-                if (equalsIndex <= 0 || equalsIndex >= cond.length()) {
-                    throw new IllegalArgumentException("Неправильный формат условия: '" + cond + "'");
-                }
-
-                String fieldName = cond.substring(0, equalsIndex).trim();
-                String valueStr = cond.substring(equalsIndex + 1).replaceAll("^['\"]|['\"]$", "").trim();
-                log.info("!!!! fieldName : " + fieldName);
-                log.info("!!!! valueStr : " + valueStr);
-
-
-                switch (fieldName.toLowerCase()) {
-                    case "device":
-                        if (!Objects.equals(valueStr, context.getDevice())) {
-                            return false;
-                        }
-                        break;
-                    case "browser":
-                        if (!Objects.equals(valueStr, context.getBrowser())) {
-                            return false;
-                        }
-                        break;
-                    case "region":
-                        if (!Objects.equals(valueStr, context.getRegion())) {
-                            return false;
-                        }
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Неверное имя поля: '" + fieldName + "'");
-                }
-            }
-
-            return true;
-        } catch (Exception e) {
-            System.err.println("Ошибка обработки условия '" + condition + "': " + e.getMessage());
-            return false;
-        }
-    }*/
 }

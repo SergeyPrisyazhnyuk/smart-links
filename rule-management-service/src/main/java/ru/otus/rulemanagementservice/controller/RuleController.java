@@ -18,14 +18,10 @@ public class RuleController {
     @Autowired
     private final RuleService ruleService;
 
-/*    public RuleController(RuleService ruleService) {
-        this.ruleService = ruleService;
-    }*/
-
     @GetMapping("/match")
-    public MatchingResult matchRoutes(@RequestParam(required=false) String device,
-                                      @RequestParam(required=false) String browser,
-                                      @RequestParam(required=false) String region) {
+    public MatchingResult matchRoutes(@RequestParam(required = false) String device,
+                                      @RequestParam(required = false) String browser,
+                                      @RequestParam(required = false) String region) {
         return ruleService.match(device, browser, region);
     }
 

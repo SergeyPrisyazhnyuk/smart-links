@@ -10,7 +10,6 @@ import ru.otus.authservice.model.RedirectResponse;
 import ru.otus.authservice.model.Token;
 import ru.otus.authservice.model.User;
 import ru.otus.authservice.service.AuthService;
-import ru.otus.authservice.token.JwtTokenProvider;
 
 import java.util.List;
 

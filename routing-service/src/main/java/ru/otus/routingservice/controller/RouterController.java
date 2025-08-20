@@ -17,9 +17,9 @@ public class RouterController {
     private final RoutingService routingService;
 
     @GetMapping("/context")
-    public String route(@RequestParam(value = "device"/*, defaultValue = "Android"*/) String device,
-                        @RequestParam(value = "browser"/*, defaultValue = "Chrome"*/) String browser,
-                        @RequestParam(value = "region"/*, defaultValue = "Moscow"*/) String region) {
+    public String route(@RequestParam(value = "device") String device,
+                        @RequestParam(value = "browser") String browser,
+                        @RequestParam(value = "region") String region) {
 
         log.info("Running request with : device= {}, browser = {}, region = {}  ", device, browser, region);
         Context context = Context.builder()

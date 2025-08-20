@@ -7,9 +7,6 @@ import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 import ru.otus.rulemanagementservice.model.RouteRule;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class RouteRuleService {
 
     public static Specification<RouteRule> findExactMatchingRules(final String device, final String browser, final String region) {

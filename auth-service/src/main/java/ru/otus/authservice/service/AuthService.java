@@ -71,14 +71,11 @@ public class AuthService {
                     .toUri();
 
             log.info("URI : " + uri);
-
-            String targetUrl = restTemplate.getForObject(uri, String.class);
-
-            log.info("targetUrl : " + targetUrl);
-
+            String relativeTargetUrl = restTemplate.getForObject(uri, String.class);
+            String absoluteTargetUrl = "http://localhost:8084" + relativeTargetUrl;
+            log.info("absoluteTargetUrl : " + absoluteTargetUrl);
             String token = jwtTokenProvider.generateToken(username);
-
-            return new RedirectResponse(targetUrl, token);
+            return new RedirectResponse(absoluteTargetUrl, token);
         } catch (Exception e) {
             log.error("Ошибка связи с Router Controller:", e);
             return null;
